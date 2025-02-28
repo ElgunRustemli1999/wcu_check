@@ -5,3 +5,5 @@ opencv-python
 numpy
 dlib
 cmake
+psycopg[binary]
+python-dotenv
