@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: face-attendance
+    env: python
+    plan: free
+    buildCommand: "pip install pip-tools && pip-compile requirements.in && pip install -r requirements.txt"
+    startCommand: "gunicorn wcu_check.wsgi:application"
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: wcu-check-db
+          property: connectionString
+      - key: SECRET_KEY
+        sync: false
+      - key: DEBUG
+        value: "False"
+    staticPublishPath: "static"
+    autoDeploy: true
+
+databases:
+  - name: wcu-check-db  # render içindəki ad
+    plan: free
+    databaseName: wcu_check  # PostgreSQL daxilindəki real baza adı
+    user: wcu_check_user     # PostgreSQL istifadəçi adı
