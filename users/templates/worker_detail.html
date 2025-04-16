@@ -1,0 +1,49 @@
+<!-- users/templates/users/worker_detail.html -->
+{% extends "base.html" %}
+
+{% block title %}İşçi Məlumatları{% endblock %}
+
+{% block content %}
+    <h1>İşçi Məlumatlarını Göstər</h1>
+    <div>
+        <label for="user_id">İstifadəçi ID daxil et:</label>
+        <input type="number" id="user_id" placeholder="İstifadəçi ID" required>
+        <button id="get_worker_btn">İşçi Məlumatlarını Yükle</button>
+    </div>
+
+    <div id="worker_details" style="display: none;">
+        <h2>İşçi Məlumatları</h2>
+        <p><strong>Adı:</strong> <span id="worker_name"></span></p>
+        <p><strong>Email:</strong> <span id="worker_email"></span></p>
+        <p><strong>Vəzifə:</strong> <span id="worker_position"></span></p>
+        <p><strong>Telefon:</strong> <span id="worker_phone"></span></p>
+    </div>
+
+    <p id="error_message" style="color: red;"></p>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        document.getElementById('get_worker_btn').addEventListener('click', function() {
+            const userId = document.getElementById('user_id').value;
+
+            fetch(`/api/users/${userId}/get_worker/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        document.getElementById('error_message').textContent = data.error;
+                        document.getElementById('worker_details').style.display = 'none';
+                    } else {
+                        document.getElementById('worker_name').textContent = data.first_name + ' ' + data.last_name;
+                        document.getElementById('worker_email').textContent = data.email;
+                        document.getElementById('worker_position').textContent = data.position;
+                        document.getElementById('worker_phone').textContent = data.phone;
+                        document.getElementById('worker_details').style.display = 'block';
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('error_message').textContent = 'Xəta baş verdi.';
+                });
+        });
+    </script>
+{% endblock %}

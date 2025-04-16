@@ -1,0 +1,18 @@
+<!-- users_app/templates/users_app/login.html -->
+{% extends "base.html" %}
+
+{% block title %}Giriş{% endblock %}
+
+{% block content %}
+    <h1>Giriş Edin</h1>
+    <form method="POST" action="/users_app/login/">
+        {% csrf_token %}
+        <label for="email">Email:</label>
+        <input type="email" name="email" id="email" required>
+        
+        <label for="password">Şifrə:</label>
+        <input type="password" name="password" id="password" required>
+        
+        <button type="submit">Giriş</button>
+    </form>
+{% endblock %}

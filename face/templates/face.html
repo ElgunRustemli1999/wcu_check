@@ -1,0 +1,35 @@
+<!-- face_app/templates/face_app/recognition.html -->
+{% extends "base.html" %}
+
+{% block title %}Üz Tanıma{% endblock %}
+
+{% block content %}
+    <h1>Üz Tanıma Sistemi</h1>
+    <input type="file" id="camera" accept="image/*">
+    <button id="uploadBtn">Şəkili Göndər</button>
+    <p id="result"></p>
+
+    <script>
+        document.getElementById('uploadBtn').addEventListener('click', function() {
+            const fileInput = document.getElementById('camera');
+            const formData = new FormData();
+            formData.append('image', fileInput.files[0]);
+
+            fetch('/face_app/recognize/', {
+                method: 'POST',
+                body: formData,
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    document.getElementById('result').innerText = `${data.message} Giriş Vaxtı: ${data.check_in_time}`;
+                } else {
+                    document.getElementById('result').innerText = data.message;
+                }
+            })
+            .catch(error => {
+                document.getElementById('result').innerText = 'Xəta baş verdi.';
+            });
+        });
+    </script>
+{% endblock %}

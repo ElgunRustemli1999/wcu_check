@@ -7,3 +7,9 @@ dlib
 cmake
 psycopg[binary]
 python-dotenv
+djangorestframework-simplejwt
+channels
+channels_redis
+django-cors-headers
+dj-database-url 
+gunicorn

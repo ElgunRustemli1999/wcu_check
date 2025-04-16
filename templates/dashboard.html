@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+  <meta charset="UTF-8">
+  <title>HR Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f4f4f4;
+      padding: 2rem;
+      text-align: center;
+    }
+    .card {
+      display: inline-block;
+      background: #fff;
+      padding: 1.5rem;
+      margin: 1rem;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      width: 200px;
+    }
+    .card h2 {
+      font-size: 20px;
+      margin-bottom: 10px;
+    }
+    .card p {
+      font-size: 24px;
+      font-weight: bold;
+    }
+    canvas {
+      margin-top: 3rem;
+      max-width: 700px;
+    }
+  </style>
+</head>
+<body>
+  <h1>HR Dashboard</h1>
+  <div class="card"><h2>Gələnlər</h2><p id="presentCount">0</p></div>
+  <div class="card"><h2>Gəlməyənlər</h2><p id="absentCount">0</p></div>
+  <div class="card"><h2>İcazəli</h2><p id="excusedCount">0</p></div>
+  <div class="card"><h2>İcazəsiz</h2><p id="unexcusedCount">0</p></div>
+
+  <canvas id="lateChart"></canvas>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      fetch('/hr/reports/')
+        .then(res => res.json())
+        .then(data => {
+          let icazeli = 0, icazesiz = 0;
+          data.forEach(item => {
+            if (item.status === 'icazəli') icazeli++;
+            if (item.status === 'icazəsoz') icazesiz++;
+          });
+          document.getElementById('excusedCount').innerText = icazeli;
+          document.getElementById('unexcusedCount').innerText = icazesiz;
+        });
+
+      fetch('/attendance/hours/')
+        .then(res => res.json())
+        .then(data => {
+          let gelen = 0, gelmeyen = 0;
+          let lateMap = {};
+
+          data.forEach(item => {
+            if (item.check_in) gelen++;
+            else gelmeyen++;
+
+            if (item.late_minutes > 0) {
+              let name = item.worker || 'Naməlum';
+              lateMap[name] = (lateMap[name] || 0) + item.late_minutes;
+            }
+          });
+
+          document.getElementById('presentCount').innerText = gelen;
+          document.getElementById('absentCount').innerText = gelmeyen;
+
+          const labels = Object.keys(lateMap);
+          const values = Object.values(lateMap);
+
+          new Chart(document.getElementById('lateChart').getContext('2d'), {
+            type: 'bar',
+            data: {
+              labels: labels,
+              datasets: [{
+                label: 'Gecikmə dəqiqələri',
+                data: values,
+                backgroundColor: 'rgba(255, 99, 132, 0.5)'
+              }]
+            },
+            options: {
+              responsive: true,
+              plugins: {
+                title: {
+                  display: true,
+                  text: 'Ən çox gecikən işçilər'
+                }
+              }
+            }
+          });
+        });
+    });
+  </script>
+</body>
+</html>
