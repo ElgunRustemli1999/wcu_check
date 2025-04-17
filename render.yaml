@@ -1,8 +1,8 @@
 services:
   - type: web
-    name: wcu-check-app
+    name: wcu-check
     env: python
-    plan: pro
+    plan: pro-plus  # 8GB RAM
     buildCommand: |
       chmod +x install.sh
       ./install.sh
@@ -10,17 +10,17 @@ services:
     envVars:
       - key: DATABASE_URL
         fromDatabase:
-          name: wcu-check-db  # <-- Bunu öz Render Postgres servis adınla dəyiş
+          name: wcu-check-db
           property: connectionString
       - key: DJANGO_SETTINGS_MODULE
         value: wcu_check.settings
       - key: SECRET_KEY
         generateValue: true
-      - key: PYTHON_VERSION
-        value: 3.10  # Ən stabil TensorFlow + dlib uyğundur
-    autoDeploy: true
     buildFilter:
       paths:
         - requirements.txt
         - install.sh
         - render.yaml
+
+
+

@@ -9,7 +9,9 @@ apt-get update && apt-get install -y \
     libx11-dev \
     libgtk-3-dev \
     libboost-python-dev \
-    python3-dev
+    python3-dev \
+    libjpeg-dev \
+    libpng-dev
 
 echo "===== pip Güncəllənir ====="
 pip install --upgrade pip
@@ -19,6 +21,3 @@ pip install dlib
 
 echo "===== Python dependensiyalar requirements.txt ilə qurulur ====="
 pip install -r requirements.txt
-
-echo "===== GUNICORN ilə tətbiq işə salınır ====="
-gunicorn wcu_check.wsgi:application
