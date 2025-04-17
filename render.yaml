@@ -3,7 +3,7 @@ services:
     name: face-attendance
     env: python
     plan: standard
-    buildCommand: "pip install pip-tools && pip-compile requirements.in && pip install -r requirements.txt"
+    buildCommand: "pip install -r requirements.txt"
     startCommand: "gunicorn wcu_check.wsgi:application"
     envVars:
       - key: DATABASE_URL
