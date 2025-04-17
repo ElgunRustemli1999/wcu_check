@@ -1,15 +1,20 @@
-django
+# Django və əsas dependensiyalar
+django>=5.0,<6.0
 djangorestframework
-face_recognition
-opencv-python
-numpy
-dlib
-cmake
-psycopg[binary]
-python-dotenv
+django-cors-headers
 djangorestframework-simplejwt
 channels
 channels_redis
-django-cors-headers
-dj-database-url 
 gunicorn
+dj-database-url
+python-dotenv
+
+# Verilənlər bazası
+psycopg[binary]
+
+# OpenCV və NumPy
+opencv-python
+numpy==1.26.4
+
+# Üz tanıma
+face_recognition

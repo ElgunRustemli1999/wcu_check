@@ -1,24 +1,26 @@
 services:
   - type: web
-    name: face-attendance
+    name: wcu-check-app
     env: python
-    plan: standard
-    buildCommand: "pip install -r requirements.txt"
-    startCommand: "gunicorn wcu_check.wsgi:application"
+    plan: pro
+    buildCommand: |
+      chmod +x install.sh
+      ./install.sh
+    startCommand: gunicorn wcu_check.wsgi:application
     envVars:
       - key: DATABASE_URL
         fromDatabase:
-          name: wcu-check-db
+          name: wcu-check-db  # <-- Bunu öz Render Postgres servis adınla dəyiş
           property: connectionString
+      - key: DJANGO_SETTINGS_MODULE
+        value: wcu_check.settings
       - key: SECRET_KEY
-        sync: false
-      - key: DEBUG
-        value: "False"
-    staticPublishPath: "static"
+        generateValue: true
+      - key: PYTHON_VERSION
+        value: 3.10  # Ən stabil TensorFlow + dlib uyğundur
     autoDeploy: true
-
-databases:
-  - name: wcu-check-db  # render içindəki ad
-    plan: free
-    databaseName: wcu_check  # PostgreSQL daxilindəki real baza adı
-    user: wcu_check_user     # PostgreSQL istifadəçi adı
+    buildFilter:
+      paths:
+        - requirements.txt
+        - install.sh
+        - render.yaml
