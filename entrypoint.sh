@@ -1,7 +1,5 @@
 #!/bin/bash
 
-echo "Installing face_recognition_models from GitHub..."
-pip install --no-cache-dir git+https://github.com/ageitgey/face_recognition_models
 
 echo "Running Migrations..."
 python manage.py migrate --noinput

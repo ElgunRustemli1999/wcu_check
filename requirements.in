@@ -18,4 +18,4 @@ numpy==1.26.4
 
 # Üz tanıma
 face_recognition
-face_recognition_models @ git+https://github.com/ageitgey/face_recognition_models
+
