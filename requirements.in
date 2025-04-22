@@ -17,5 +17,5 @@ opencv-python
 numpy==1.26.4
 
 # Üz tanıma
-face_recognition
+face-recognition
 
