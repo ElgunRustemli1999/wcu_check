@@ -1,5 +1,5 @@
 # Django və əsas dependensiyalar
-django>=5.0,<6.0
+django
 djangorestframework
 django-cors-headers
 djangorestframework-simplejwt
@@ -8,7 +8,7 @@ channels_redis
 gunicorn
 dj-database-url
 python-dotenv
-
+django-jazzmin
 # Verilənlər bazası
 psycopg[binary]
 
@@ -18,3 +18,4 @@ numpy==1.26.4
 
 # Üz tanıma
 face_recognition
+face_recognition_models @ git+https://github.com/ageitgey/face_recognition_models
