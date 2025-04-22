@@ -9,6 +9,7 @@ gunicorn
 dj-database-url
 python-dotenv
 django-jazzmin
+
 # Verilənlər bazası
 psycopg[binary]
 
@@ -18,4 +19,4 @@ numpy==1.26.4
 
 # Üz tanıma
 face-recognition
-
+git+https://github.com/ageitgey/face_recognition_models.git
