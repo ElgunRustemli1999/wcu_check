@@ -8,9 +8,12 @@ WORKDIR /app
 
 COPY . .
 
-RUN chmod +x entrypoint.sh
+# Install dependencies including face_recognition_models
+RUN pip install --upgrade pip \
+    && pip install git+https://github.com/ageitgey/face_recognition_models \
+    && pip install -r requirements.txt
 
-RUN pip install --upgrade pip && pip install -r requirements.txt
+RUN chmod +x entrypoint.sh
 
 ENV PYTHONUNBUFFERED=1
 
