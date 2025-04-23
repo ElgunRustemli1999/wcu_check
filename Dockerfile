@@ -12,13 +12,15 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
+
 COPY requirements.txt requirements.txt
 RUN pip install --upgrade pip && pip install -r requirements.txt
 
 COPY . .
 
-ENV PORT=8000
+# Railway PORT dəyişəni runtime-da verilir — build zamanı istifadə etmə
+EXPOSE 8000
 
-RUN python manage.py migrate && python manage.py collectstatic --noinput
+# Migrate və collectstatic build zamanı etmə — runtime-da et
+CMD bash -c "python manage.py migrate && python manage.py collectstatic --noinput && gunicorn wcu_check.wsgi:application --bind 0.0.0.0:$PORT"
 
-CMD ["gunicorn", "wcu_check.wsgi:application", "--bind", "0.0.0.0:${PORT}"]
