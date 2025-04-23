@@ -23,4 +23,4 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 COPY . .
 
 # Django migration + collectstatic + gunicorn server
-CMD bash -c "python manage.py migrate && python manage.py collectstatic --noinput && gunicorn wcu_check.wsgi:application --bind 0.0.0.0:8000"
+CMD bash -c "python manage.py migrate && python manage.py collectstatic --noinput && gunicorn wcu_check.wsgi:application --bind 0.0.0.0:${PORT}"
