@@ -1,6 +1,5 @@
 FROM python:3.12-slim
 
-# Sistem paketləri quraşdırılır
 RUN apt-get update && apt-get install -y \
     build-essential \
     cmake \
@@ -12,15 +11,14 @@ RUN apt-get update && apt-get install -y \
     libjpeg-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# İş qovluğu
 WORKDIR /app
-
-# Asılılıqlar
 COPY requirements.txt requirements.txt
 RUN pip install --upgrade pip && pip install -r requirements.txt
 
-# Layihə faylları
 COPY . .
 
-# Django migration + collectstatic + gunicorn server
-CMD bash -c "python manage.py migrate && python manage.py collectstatic --noinput && gunicorn wcu_check.wsgi:application --bind 0.0.0.0:${PORT}"
+ENV PORT=8000
+
+RUN python manage.py migrate && python manage.py collectstatic --noinput
+
+CMD ["gunicorn", "wcu_check.wsgi:application", "--bind", "0.0.0.0:${PORT}"]
