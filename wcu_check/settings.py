@@ -7,21 +7,17 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # ====== Static & Media ======
 STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-if os.getenv("DEBUG", "True") == "True":
-    STATICFILES_DIRS = [os.path.join(BASE_DIR, 'collected_static')]
+# WhiteNoise üçün
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
-# ====== Security ======
+# ====== Security & Debug ======
 SECRET_KEY = os.getenv("SECRET_KEY", "change-me")
-DEBUG = os.getenv("DEBUG", "True") == "True"
+DEBUG = os.getenv("DEBUG", "False") == "True"
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
-
-RENDER_EXTERNAL_HOSTNAME = os.getenv("RENDER_EXTERNAL_HOSTNAME")
-if RENDER_EXTERNAL_HOSTNAME:
-    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
 
 # ====== Installed Apps ======
 INSTALLED_APPS = [
@@ -31,13 +27,19 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    # Apps
     "hr", "attendance", "core", "users", "face",
-    "rest_framework", "rest_framework_simplejwt", "channels", "corsheaders",
+    # REST & Auth
+    "rest_framework",
+    "rest_framework_simplejwt",
+    "corsheaders",
+    "django_jazzmin",
 ]
 
 # ====== Middleware ======
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",  # WhiteNoise əlavə edildi
     "django.contrib.sessions.middleware.SessionMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -47,14 +49,12 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-CORS_ALLOW_ALL_ORIGINS = True
-
-# ====== URLs, Templates ======
+# ====== URLs & Templates ======
 ROOT_URLCONF = "wcu_check.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [os.path.join(BASE_DIR, 'templates')],
+        "DIRS": [os.path.join(BASE_DIR, "templates")],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -68,25 +68,17 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "wcu_check.wsgi.application"
-ASGI_APPLICATION = "wcu_check.asgi.application"
 
 # ====== Database ======
 DATABASES = {
     "default": dj_database_url.config(default=os.getenv("DB_URL"), conn_max_age=600)
 }
 
-# ====== Auth ======
+# ====== Custom User Model ======
 AUTH_USER_MODEL = 'users.CustomUser'
 
-# ====== Channels ======
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {
-            "hosts": [("127.0.0.1", 6379)],
-        },
-    },
-}
+# ====== CORS ======
+CORS_ALLOW_ALL_ORIGINS = True
 
 # ====== REST & JWT ======
 REST_FRAMEWORK = {

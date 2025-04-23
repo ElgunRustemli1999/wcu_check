@@ -82,3 +82,5 @@ tzdata==2025.1
     # via
     #   django
     #   psycopg
+whitenoise==6.9.0
+    # via -r requirements.in
