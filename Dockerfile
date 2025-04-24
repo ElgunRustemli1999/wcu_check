@@ -1,6 +1,6 @@
-FROM python:3.12
+FROM python:3.12-slim
 
-# Sistemdə lazım olan kitabxanalar
+# Sistem paketlərini quraşdır
 RUN apt-get update && apt-get install -y \
     build-essential \
     cmake \
@@ -10,19 +10,25 @@ RUN apt-get update && apt-get install -y \
     libgtk-3-dev \
     libboost-all-dev \
     libjpeg-dev \
+    git \
     && rm -rf /var/lib/apt/lists/*
 
-# İş qovluğu
 WORKDIR /app
+
+# Requirements faylı
+COPY requirements.txt .
+
+# Pip upgrade və requirements-ləri qur
+RUN pip install --upgrade pip
+RUN pip install -r requirements.txt
+
+# ƏLAVƏ: face_recognition_models ayrıca qur
 RUN pip install git+https://github.com/ageitgey/face_recognition_models.git
-# Requirements və əlavə paket
-COPY requirements.txt ./
-RUN pip install --upgrade pip && pip install -r requirements.txt
-# face_recognition_models ayrıca çağırılır
 
-
-# Layihə faylları və entrypoint
+# Layihə fayllarını kopyala
 COPY . .
+
+# entrypoint scriptini əlavə et və icazə ver
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
