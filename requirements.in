@@ -21,4 +21,5 @@ numpy==1.26.4
 # Üz tanıma
 face-recognition
 whitenoise
+face-recognition-models @ git+https://github.com/ageitgey/face_recognition_models.git
 
