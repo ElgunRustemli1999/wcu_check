@@ -1,6 +1,6 @@
 FROM python:3.12-slim
 
-# Lazımi sistem paketləri
+# Sistem paketləri
 RUN apt-get update && apt-get install -y \
     build-essential \
     cmake \
@@ -12,7 +12,6 @@ RUN apt-get update && apt-get install -y \
     libjpeg-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# İş qovluğu
 WORKDIR /app
 
 # Requirements
@@ -22,8 +21,10 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 # Layihə faylları
 COPY . .
 
-# Port (Railway avtomatik təyin edir, sadəcə EXPOSE lazımdır)
+# Entrypoint script
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
 EXPOSE 8000
 
-# Entrypoint
-CMD ["sh", "-c", "python manage.py migrate && python manage.py collectstatic --noinput && gunicorn wcu_check.wsgi:application --bind 0.0.0.0:$PORT"]
+CMD ["/entrypoint.sh"]
