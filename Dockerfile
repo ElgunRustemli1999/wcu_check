@@ -14,12 +14,12 @@ RUN apt-get update && apt-get install -y \
 
 # İş qovluğu
 WORKDIR /app
-
+RUN pip install git+https://github.com/ageitgey/face_recognition_models.git
 # Requirements və əlavə paket
 COPY requirements.txt ./
 RUN pip install --upgrade pip && pip install -r requirements.txt
 # face_recognition_models ayrıca çağırılır
-RUN pip install git+https://github.com/ageitgey/face_recognition_models.git
+
 
 # Layihə faylları və entrypoint
 COPY . .
