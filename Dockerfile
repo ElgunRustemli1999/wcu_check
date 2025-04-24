@@ -22,8 +22,7 @@ COPY requirements.txt .
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 
-# ƏLAVƏ: face_recognition_models ayrıca qur
-RUN pip install git+https://github.com/ageitgey/face_recognition_models.git
+
 
 # Layihə fayllarını kopyala
 COPY . .
