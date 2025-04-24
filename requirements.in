@@ -8,7 +8,8 @@ channels_redis
 gunicorn
 dj-database-url
 python-dotenv
-django-jazzmin
+
+
 
 # Verilənlər bazası
 psycopg[binary]
