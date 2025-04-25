@@ -6,43 +6,107 @@
   <meta name="csrf-token" content="{{ csrf_token }}">
   <style>
     body {
-      font-family: sans-serif;
-      text-align: center;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
       background: #f5f5f5;
-      padding: 2rem;
+      display: flex;
+      min-height: 100vh;
     }
+
+    /* Sol panel */
+    .sidebar {
+      width: 30%;
+      background: #fff;
+      padding: 2rem;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+      overflow-y: auto;
+    }
+
+    .sidebar h2 {
+      margin-bottom: 1rem;
+      font-size: 20px;
+      color: #444;
+    }
+
+    .entry {
+      background: #f0f8ff;
+      border-left: 5px solid #28a745;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      border-radius: 8px;
+    }
+
+    /* Sağ əsas sahə */
+    .main {
+      flex-grow: 1;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    h1 {
+      margin-bottom: 1rem;
+      color: #333;
+    }
+
     video, canvas {
       margin-top: 1rem;
       border: 2px solid #333;
       border-radius: 5px;
     }
+
     button {
       margin-top: 1rem;
       padding: 10px 20px;
       font-size: 16px;
+      cursor: pointer;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 5px;
     }
-    .result {
+
+    .result-box {
       margin-top: 2rem;
-      font-size: 18px;
-      color: #333;
+      display: inline-block;
+      background: #fff;
+      border-radius: 10px;
+      padding: 1rem 2rem;
+      border: 2px solid #28a745;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      text-align: left;
+    }
+
+    .result-box p {
+      margin: 0.5rem 0;
     }
   </style>
 </head>
 <body>
-  <h1>Üz Tanıma Sistemi</h1>
-  <video id="video" width="480" height="360" autoplay></video><br>
-  <button id="capture">Şəkil Çək və Tanı</button>
-  <canvas id="canvas" width="480" height="360" style="display: none;"></canvas>
-  <div class="result" id="result"></div>
+
+  <div class="sidebar">
+    <h2>Gələnlər Siyahısı</h2>
+    <div id="entryList">
+      <!-- Dinamik gələnlər buraya əlavə olunacaq -->
+    </div>
+  </div>
+
+  <div class="main">
+    <h1>Üz Tanıma Sistemi</h1>
+    <video id="video" width="480" height="360" autoplay></video><br>
+    <button id="capture">Şəkil Çək və Tanı</button>
+    <canvas id="canvas" width="480" height="360" style="display: none;"></canvas>
+    <div class="result" id="result"></div>
+  </div>
 
   <script>
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
     const context = canvas.getContext('2d');
     const resultDiv = document.getElementById('result');
+    const entryList = document.getElementById('entryList');
     const csrftoken = document.querySelector('[name=csrf-token]').content;
 
-    // Kamera açılır
     navigator.mediaDevices.getUserMedia({ video: true })
       .then(stream => {
         video.srcObject = stream;
@@ -51,7 +115,6 @@
         resultDiv.innerText = 'Kameranı açmaq mümkün olmadı: ' + err;
       });
 
-    // Şəkil çək və serverə göndər
     document.getElementById('capture').addEventListener('click', () => {
       context.drawImage(video, 0, 0, canvas.width, canvas.height);
       const imageData = canvas.toDataURL('image/jpeg');
@@ -67,12 +130,27 @@
       .then(res => res.json())
       .then(data => {
         if (data.status === "success") {
-          resultDiv.innerHTML = `<strong>${data.message}</strong><br>
-            ID: ${data.worker_id}<br>
-            Saat: ${data.time}<br>
-            Növ: ${data.type}`;
+          resultDiv.innerHTML = `
+            <div class="result-box">
+              <h3>${data.message}</h3>
+              <p><strong>ID:</strong> ${data.worker_id}</p>
+              <p><strong>Vəzifə:</strong> ${data.position}</p>
+              <p><strong>Bölmə:</strong> ${data.department}</p>
+              <p><strong>Vaxt:</strong> ${data.time}</p>
+              <p><strong>Əməliyyat:</strong> ${data.type === 'check_in' ? 'Giriş' : 'Çıxış'}</p>
+            </div>`;
+
+          // Gələnlər siyahısına əlavə et
+          const div = document.createElement('div');
+          div.className = 'entry';
+          div.innerHTML = `
+            <strong>${data.worker_id} — ${data.position}</strong><br>
+            ${data.message} (${data.time})
+          `;
+          entryList.prepend(div);
+
         } else {
-          resultDiv.innerText = data.message || 'Heç kim tanınmadı';
+          resultDiv.innerHTML = `<p style="color: red;">${data.message || 'Heç kim tanınmadı'}</p>`;
         }
       })
       .catch(err => {
@@ -80,5 +158,6 @@
       });
     });
   </script>
+
 </body>
 </html>
