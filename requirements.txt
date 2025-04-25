@@ -86,4 +86,4 @@ whitenoise==6.9.0
 
 setuptools
 
-pip install pytz
+pytz
