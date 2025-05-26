@@ -93,4 +93,6 @@ urllib3==2.4.0
     # via requests
 whitenoise==6.9.0
     # via -r requirements.in
+pytz
+
 setuptools
