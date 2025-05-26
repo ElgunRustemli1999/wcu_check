@@ -58,7 +58,6 @@ def recognize_face(request):
     try:
         body = json.loads(request.body)
         image_data = body.get('image')
-       
 
         if not image_data:
             return JsonResponse({"status": "error", "message": "Şəkil göndərilməyib."})
@@ -66,13 +65,13 @@ def recognize_face(request):
         # Base64 formatından şəkil çevrilir
         image_data = b64decode(image_data.split(',')[1])
         image = Image.open(BytesIO(image_data)).convert("RGB")
-        print(image)
         image_np = np.array(image)
-        
+        face_locations = face_recognition.face_locations(image_np)
+        print("Face locations:", face_locations)
         print(image_np.shape)
         print(image_np.shape)
         # Üz encoding-ləri al
-        encodings = face_recognition.face_encodings(image_np)
+        encodings = face_recognition.face_encodings(image_np,face_locations)
         print(encodings)
         if not encodings:
             return JsonResponse({"status": "error", "message": "Üz tanınmadı."})
@@ -118,25 +117,19 @@ def recognize_face(request):
                     elif not created and not attendance.is_checked_in:
                         attendance.mark_check_in()
                         return JsonResponse({
-                             "status": "success",
-                        "message": f"{worker.worker_name} çıxış etdi.",
-                        "worker_id": worker.id,
-                        "full_name": f"{worker.worker_name} {worker.worker_surname}",
-                        "type": "check_out",
-                        "time": now.strftime("%H:%M:%S"),
-                        "position": worker.position.position_name if worker.position else "-",
-                        "department": worker.department.department_name if worker.department else "-"
+                            "status": "success",
+                            "message": f"{worker.worker_name} ikinci dəfə giriş etdi.",
+                            "worker_id": worker.id,
+                            "type": "check_in",
+                            "time": now.strftime("%H:%M:%S")
                         })
 
                     return JsonResponse({
-                         "status": "success",
-                        "message": f"{worker.worker_name} çıxış etdi.",
+                        "status": "success",
+                        "message": f"{worker.worker_name} işə gəldi.",
                         "worker_id": worker.id,
-                        "full_name": f"{worker.worker_name} {worker.worker_surname}",
-                        "type": "check_out",
-                        "time": now.strftime("%H:%M:%S"),
-                        "position": worker.position.position_name if worker.position else "-",
-                        "department": worker.department.department_name if worker.department else "-"
+                        "type": "check_in",
+                        "time": now.strftime("%H:%M:%S")
                     })
 
             except Exception as e:

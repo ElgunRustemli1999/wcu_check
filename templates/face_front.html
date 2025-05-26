@@ -6,15 +6,13 @@
   <meta name="csrf-token" content="{{ csrf_token }}">
   <style>
     body {
-      margin: 0;
-      padding: 0;
       font-family: Arial, sans-serif;
       background: #f5f5f5;
       display: flex;
       min-height: 100vh;
+      margin: 0;
     }
 
-    /* Sol panel */
     .sidebar {
       width: 30%;
       background: #fff;
@@ -24,9 +22,9 @@
     }
 
     .sidebar h2 {
-      margin-bottom: 1rem;
       font-size: 20px;
       color: #444;
+      margin-bottom: 1rem;
     }
 
     .entry {
@@ -37,7 +35,6 @@
       border-radius: 8px;
     }
 
-    /* Sağ əsas sahə */
     .main {
       flex-grow: 1;
       padding: 2rem;
@@ -49,7 +46,7 @@
       color: #333;
     }
 
-    video, canvas {
+    img, canvas {
       margin-top: 1rem;
       border: 2px solid #333;
       border-radius: 5px;
@@ -86,37 +83,33 @@
 
   <div class="sidebar">
     <h2>Gələnlər Siyahısı</h2>
-    <div id="entryList">
-      <!-- Dinamik gələnlər buraya əlavə olunacaq -->
-    </div>
+    <div id="entryList"></div>
   </div>
 
   <div class="main">
     <h1>Üz Tanıma Sistemi</h1>
-    <video id="video" width="480" height="360" autoplay></video><br>
+
+    <!-- Düzgün kamera görüntüsü -->
+    <img id="hikvisionStream" src="{% url 'video_feed' %}" width="480" height="360" alt="Kamera Axını"><br>
+
     <button id="capture">Şəkil Çək və Tanı</button>
-    <canvas id="canvas" width="480" height="360" style="display: none;"></canvas>
-    <div class="result" id="result"></div>
+
+    <canvas id="canvas" width="1280" height="720" style="display: none;"></canvas>
+
+    <div id="result"></div>
   </div>
 
   <script>
-    const video = document.getElementById('video');
+    const streamImg = document.getElementById('hikvisionStream');
     const canvas = document.getElementById('canvas');
     const context = canvas.getContext('2d');
     const resultDiv = document.getElementById('result');
     const entryList = document.getElementById('entryList');
     const csrftoken = document.querySelector('[name=csrf-token]').content;
 
-    navigator.mediaDevices.getUserMedia({ video: true })
-      .then(stream => {
-        video.srcObject = stream;
-      })
-      .catch(err => {
-        resultDiv.innerText = 'Kameranı açmaq mümkün olmadı: ' + err;
-      });
-
+    // Şəkil çək və göndər
     document.getElementById('capture').addEventListener('click', () => {
-      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      context.drawImage(streamImg, 0, 0, canvas.width, canvas.height);
       const imageData = canvas.toDataURL('image/jpeg');
 
       fetch('/face/recognize/', {
@@ -140,15 +133,10 @@
               <p><strong>Əməliyyat:</strong> ${data.type === 'check_in' ? 'Giriş' : 'Çıxış'}</p>
             </div>`;
 
-          // Gələnlər siyahısına əlavə et
           const div = document.createElement('div');
           div.className = 'entry';
-          div.innerHTML = `
-            <strong>${data.worker_id} — ${data.position}</strong><br>
-            ${data.message} (${data.time})
-          `;
+          div.innerHTML = `<strong>${data.full_name} — ${data.position}</strong><br>${data.message} (${data.time})`;
           entryList.prepend(div);
-
         } else {
           resultDiv.innerHTML = `<p style="color: red;">${data.message || 'Heç kim tanınmadı'}</p>`;
         }
@@ -157,6 +145,13 @@
         resultDiv.innerText = 'Xəta baş verdi: ' + err;
       });
     });
+
+    // (İstəyə görə) hər 5 saniyədə bir avtomatik tanıma:
+    /*
+    setInterval(() => {
+      document.getElementById('capture').click();
+    }, 5000);
+    */
   </script>
 
 </body>

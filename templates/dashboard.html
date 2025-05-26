@@ -5,12 +5,8 @@
   <title>HR Dashboard</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    body {
-      font-family: sans-serif;
-      background: #f4f4f4;
-      padding: 2rem;
-      text-align: center;
-    }
+    body { font-family: sans-serif; background: #f4f4f4; padding: 2rem; text-align: center; }
+    .controls { margin-bottom: 2rem; }
     .card {
       display: inline-block;
       background: #fff;
@@ -18,161 +14,273 @@
       margin: 1rem;
       border-radius: 10px;
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-      width: 200px;
-      cursor: pointer;
-      transition: transform 0.2s;
+      width: 300px;
+      vertical-align: top;
     }
-    .card:hover {
-      transform: scale(1.05);
-    }
-    .card h2 {
-      font-size: 20px;
-      margin-bottom: 10px;
-    }
-    .card p {
-      font-size: 24px;
-      font-weight: bold;
-    }
-    canvas {
-      margin-top: 3rem;
-      max-width: 700px;
-    }
-    #detailContainer {
-      margin-top: 2rem;
-      background: #fff;
-      display: inline-block;
-      padding: 1.5rem;
-      border-radius: 10px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      text-align: left;
-      max-width: 700px;
-    }
+    .card h2 { font-size: 20px; margin-bottom: 10px; cursor: pointer; }
+    .card p { font-size: 24px; font-weight: bold; margin: 0; }
     ul {
-      padding-left: 1.5rem;
-      font-size: 16px;
+      text-align: left;
+      padding-left: 1rem;
+      font-size: 14px;
+      margin-top: 10px;
+      max-height: 200px;
+      overflow-y: auto;
+      display: none;
     }
-  </style>
-  <style>
-    
+    canvas { margin-top: 3rem; max-width: 800px; }
+    input[type="date"], select { margin: 0.5rem; }
   </style>
 </head>
 <body>
-  <h1>HR Dashboard</h1>
 
-  <div class="card" id="presentCard">
-    <h2>Gələnlər</h2><p id="presentCount">0</p>
-  </div>
-  <div class="card" id="absentCard">
-    <h2>Gəlməyənlər</h2><p id="absentCount">0</p>
-  </div>
-  <div class="card" id="excusedCard">
-    <h2>İcazəli</h2><p id="excusedCount">0</p>
-  </div>
-  <div class="card" id="unexcusedCard">
-    <h2>İcazəsiz</h2><p id="unexcusedCount">0</p>
-  </div>
+<h1>HR Dashboard</h1>
 
-  <canvas id="lateChart"></canvas>
+<div class="controls">
+  <label for="range">Tarix Aralığı:</label>
+  <select id="range" onchange="toggleDateInputs()">
+    <option value="day">Son gün</option>
+    <option value="week" selected>1 həftə</option>
+    <option value="month">1 ay</option>
+    <option value="custom">Tarix seç</option>
+  </select>
+  <input type="date" id="startDate" style="display:none;">
+  <input type="date" id="endDate" style="display:none;">
+  <button onclick="loadData()">Tətbiq et</button>
 
-  <div id="detailContainer" style="display: none;"></div>
+  <label for="workerSelect">İşçi seç:</label>
+  <select id="workerSelect" onchange="filterByWorker()">
+    <option value="">Hamısı</option>
+  </select>
+</div>
+<a href="{% url 'gelenler_siyahisi' %}">➤ Gələnlər</a>
+<a href="{% url 'gelmeyenler' %}">📍 Gəlməyənlər</a> |
+<a href="{% url 'icazeli' %}">📘 İcazəlilər</a> |
+<a href="{% url 'icazesiz' %}">📕 İcazəsizlər</a>
+<a href="{% url 'butun_isciler' %}">📋 Bütün İşçilər</a>
 
-  <script>
-    const detailContainer = document.getElementById("detailContainer");
+<div class="card">
+  <h2 onclick="toggleList('presentList')">Gələnlər</h2>
+  <p id="presentCount">0</p>
+  <ul id="presentList"></ul>
+</div>
 
-    function renderList(title, items) {
-      if (items.length === 0) {
-        detailContainer.innerHTML = `<h2>${title}</h2><p>Tapılmadı</p>`;
-      } else {
-        detailContainer.innerHTML = `
-          <h2>${title}</h2>
-          <ul>${items.map(name => `<li>${name}</li>`).join('')}</ul>
-        `;
+<div class="card">
+  <h2 onclick="toggleList('absentList')">Gəlməyənlər</h2>
+  <p id="absentCount">0</p>
+  <ul id="absentList"></ul>
+</div>
+
+<div class="card">
+  <h2 onclick="toggleList('excusedList')">İcazəli</h2>
+  <p id="excusedCount">0</p>
+  <ul id="excusedList"></ul>
+</div>
+
+<div class="card">
+  <h2 onclick="toggleList('unexcusedList')">İcazəsiz</h2>
+  <p id="unexcusedCount">0</p>
+  <ul id="unexcusedList"></ul>
+</div>
+
+<canvas id="lateChart"></canvas>
+<canvas id="summaryChart"></canvas>
+
+<script>
+let presentNames = [], absentNames = [], excusedNames = [], unexcusedNames = [];
+
+function toggleList(id) {
+  const el = document.getElementById(id);
+  el.style.display = el.style.display === "none" || el.style.display === "" ? "block" : "none";
+}
+
+function toggleDateInputs() {
+  const range = document.getElementById("range").value;
+  document.getElementById("startDate").style.display = range === "custom" ? "inline-block" : "none";
+  document.getElementById("endDate").style.display = range === "custom" ? "inline-block" : "none";
+}
+
+function getDateRange() {
+  const range = document.getElementById("range").value;
+  const now = new Date();
+  let start, end;
+
+  switch (range) {
+    case "day": start = new Date(now); end = now; break;
+    case "week": start = new Date(now); start.setDate(now.getDate() - 6); end = now; break;
+    case "month": start = new Date(now); start.setDate(now.getDate() - 29); end = now; break;
+    case "custom":
+      start = new Date(document.getElementById("startDate").value);
+      end = new Date(document.getElementById("endDate").value);
+      break;
+  }
+
+  return {
+    start: start.toISOString().split("T")[0],
+    end: end.toISOString().split("T")[0]
+  };
+}
+
+function updateWorkerDropdown() {
+  const allNames = new Set([...presentNames, ...absentNames, ...excusedNames, ...unexcusedNames].map(i => i.name));
+  const select = document.getElementById("workerSelect");
+  select.innerHTML = '<option value="">Hamısı</option>';
+  allNames.forEach(name => {
+    const option = document.createElement("option");
+    option.value = name;
+    option.textContent = name;
+    select.appendChild(option);
+  });
+}
+
+function filterByWorker() {
+  const selected = document.getElementById("workerSelect").value;
+
+  function renderList(id, list) {
+    const ul = document.getElementById(id);
+    ul.innerHTML = list
+      .filter(i => !selected || i.name === selected)
+      .map(i => {
+        const isLate = i.late && i.late > 0;
+        return `<li style="${isLate ? 'color: red; font-weight: bold;' : ''}">
+                  ${isLate ? '⚠️ ' : ''}${i.name} | ${i.position} | ${i.check_in || '-'} ${i.date ? '(' + i.date + ')' : ''}
+                </li>`;
+      })
+      .join('');
+  }
+
+  renderList("presentList", presentNames);
+  renderList("absentList", absentNames);
+  renderList("excusedList", excusedNames);
+  renderList("unexcusedList", unexcusedNames);
+}
+
+function loadData() {
+  const { start, end } = getDateRange();
+
+  Promise.all([
+    fetch(`/attendance/hours/?start=${start}&end=${end}`).then(res => res.json()),
+    fetch(`/hr/dashboard/?start=${start}&end=${end}`).then(res => res.json())
+  ]).then(([attendance, hr]) => {
+    let workerStatus = {};
+    let lateMap = {};
+    let summaryMap = {};
+
+    attendance.forEach(item => {
+      const name = item.worker;
+      const info = {
+        name,
+        check_in: item.check_in_time,
+        date: item.date,
+        position: item.position || "-",
+        late: item.late_minutes || 0
+      };
+      if (item.check_in_time) {
+        const type = info.late > 0 ? 'late' : 'present';
+        workerStatus[name] = { ...info, type };
+        if (info.late > 0) lateMap[name] = (lateMap[name] || 0) + info.late;
+        summaryMap[info.date] = summaryMap[info.date] || { present: 0, absent: 0 };
+        summaryMap[info.date].present++;
       }
-      detailContainer.style.display = 'block';
+    });
+
+    hr.forEach(item => {
+      const name = item.worker;
+      if (!workerStatus[name]) {
+        const info = {
+          name,
+          check_in: "-",
+          date: item.date,
+          position: item.position || "-"
+        };
+        let type;
+        if (item.status === 'icazəli') type = 'excused';
+        else if (item.status === 'icazəsiz') type = 'unexcused';
+        else type = 'absent';
+
+        workerStatus[name] = { ...info, type };
+        summaryMap[info.date] = summaryMap[info.date] || { present: 0, absent: 0 };
+        if (type === 'absent' || type === 'unexcused') summaryMap[info.date].absent++;
+      }
+    });
+
+    presentNames = [];
+    absentNames = [];
+    excusedNames = [];
+    unexcusedNames = [];
+
+    for (let name in workerStatus) {
+      const info = workerStatus[name];
+      switch (info.type) {
+        case 'present':
+        case 'late': presentNames.push(info); break;
+        case 'excused': excusedNames.push(info); break;
+        case 'unexcused':
+          unexcusedNames.push(info);
+          absentNames.push(info); // ✅ icazəsizlər gəlməyənlərə də düşür
+          break;
+        case 'absent':
+        default: absentNames.push(info); break;
+      }
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-      let attendanceData = [];
-      let hrData = [];
+    const total = Object.keys(workerStatus).length;
+    document.getElementById("presentCount").innerText = `${presentNames.length}/${total}`;
+    document.getElementById("absentCount").innerText = `${absentNames.length}/${total}`;
+    document.getElementById("excusedCount").innerText = `${excusedNames.length}/${total}`;
+    document.getElementById("unexcusedCount").innerText = `${unexcusedNames.length}/${total}`;
 
-      // Fetch data once for reuse
-      Promise.all([
-        fetch('/attendance/hours/').then(res => res.json()),
-        fetch('/hr/reports/').then(res => res.json())
-      ]).then(([attendance, hr]) => {
-        attendanceData = attendance;
-        hrData = hr;
+    updateWorkerDropdown();
+    filterByWorker();
 
-        // Sayları göstər
-        let gelen = 0, gelmeyen = 0;
-        let lateMap = {};
-
-        attendance.forEach(item => {
-          if (item.check_in) gelen++;
-          else gelmeyen++;
-
-          if (item.late_minutes > 0) {
-            const name = item.worker || 'Naməlum';
-            lateMap[name] = (lateMap[name] || 0) + item.late_minutes;
-          }
-        });
-
-        document.getElementById("presentCount").innerText = gelen;
-        document.getElementById("absentCount").innerText = gelmeyen;
-
-        let icazeli = hr.filter(x => x.status === 'icazəli').length;
-        let icazesiz = hr.filter(x => x.status === 'icazəsoz').length;
-
-        document.getElementById("excusedCount").innerText = icazeli;
-        document.getElementById("unexcusedCount").innerText = icazesiz;
-
-        // Gecikmələr chart
-        const labels = Object.keys(lateMap);
-        const values = Object.values(lateMap);
-
-        new Chart(document.getElementById('lateChart').getContext('2d'), {
-          type: 'bar',
-          data: {
-            labels: labels,
-            datasets: [{
-              label: 'Gecikmə dəqiqələri',
-              data: values,
-              backgroundColor: 'rgba(255, 99, 132, 0.5)'
-            }]
-          },
-          options: {
-            responsive: true,
-            plugins: {
-              title: {
-                display: true,
-                text: 'Ən çox gecikən işçilər'
-              }
-            }
-          }
-        });
-      });
-
-      // Click funksiyaları
-      document.getElementById("presentCard").addEventListener("click", () => {
-        const list = attendanceData.filter(d => d.check_in).map(d => d.worker);
-        renderList("Gələn İşçilər", list);
-      });
-
-      document.getElementById("absentCard").addEventListener("click", () => {
-        const list = attendanceData.filter(d => !d.check_in).map(d => d.worker);
-        renderList("Gəlməyən İşçilər", list);
-      });
-
-      document.getElementById("excusedCard").addEventListener("click", () => {
-        const list = hrData.filter(d => d.status === "icazəli").map(d => d.worker);
-        renderList("İcazəli İşçilər", list);
-      });
-
-      document.getElementById("unexcusedCard").addEventListener("click", () => {
-        const list = hrData.filter(d => d.status === "icazəsoz").map(d => d.worker);
-        renderList("İcazəsiz İşçilər", list);
-      });
+    new Chart(document.getElementById('lateChart').getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: Object.keys(lateMap),
+        datasets: [{
+          label: 'Gecikmə dəqiqələri',
+          data: Object.values(lateMap),
+          backgroundColor: 'rgba(255, 99, 132, 0.5)'
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          title: { display: true, text: 'Ən çox gecikən işçilər' }
+        }
+      }
     });
-  </script>
+
+    const dates = Object.keys(summaryMap).sort();
+    const presentData = dates.map(d => summaryMap[d].present);
+    const absentData = dates.map(d => summaryMap[d].absent);
+
+    new Chart(document.getElementById('summaryChart').getContext('2d'), {
+      type: 'line',
+      data: {
+        labels: dates,
+        datasets: [
+          { label: 'Gələnlər', data: presentData, borderColor: 'green', fill: false },
+          { label: 'Gəlməyənlər', data: absentData, borderColor: 'red', fill: false }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          title: { display: true, text: 'Tarix üzrə Gələn/Gəlməyən Qrafiki' }
+        }
+      }
+    });
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const today = new Date().toISOString().split("T")[0];
+  document.getElementById("startDate").value = today;
+  document.getElementById("endDate").value = today;
+  loadData();
+});
+</script>
+
 </body>
 </html>

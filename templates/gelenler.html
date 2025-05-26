@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+  <meta charset="UTF-8">
+  <title>Gələn İşçilər</title>
+  <style>
+    body { font-family: sans-serif; padding: 2rem; background: #f9f9f9; }
+    h1 { margin-bottom: 1rem; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background: #f0f0f0; }
+    .pagination a { margin: 0 5px; text-decoration: none; font-weight: bold; }
+    .controls { margin-bottom: 1rem; }
+  </style>
+</head>
+<body>
+
+<h1>Gələn İşçilərin Siyahısı</h1>
+
+<div class="controls">
+  <form method="get">
+    <label>Tarix Aralığı:</label>
+    <select name="range" onchange="toggleCustom(this.value)">
+      <option value="day" {% if range_type == 'day' %}selected{% endif %}>Bu gün</option>
+      <option value="week" {% if range_type == 'week' %}selected{% endif %}>1 həftə</option>
+      <option value="month" {% if range_type == 'month' %}selected{% endif %}>1 ay</option>
+      <option value="custom" {% if range_type == 'custom' %}selected{% endif %}>Tarix seç</option>
+    </select>
+    <input type="date" name="start" id="startDate" value="{{ start_date }}" style="{% if range_type != 'custom' %}display:none;{% endif %}">
+    <input type="date" name="end" id="endDate" value="{{ end_date }}" style="{% if range_type != 'custom' %}display:none;{% endif %}">
+    <button type="submit">Tətbiq et</button>
+  </form>
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Ad Soyad</th>
+      <th>Vəzifə</th>
+      <th>Departament</th>
+      <th>Gəliş Vaxtı</th>
+      <th>Gediş Vaxtı</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for att in page_obj %}
+      <tr>
+        <td>{{ forloop.counter }}</td>
+        <td>{{ att.worker.worker_name }} {{ att.worker.worker_surname }}</td>
+        <td>{{ att.worker.position.position_name }}</td>
+        <td>{{ att.worker.department.department_name }}</td>
+        <td>{{ att.check_in_time|date:"Y-m-d H:i" }}</td>
+        <td>
+          {% if att.check_out_time %}
+            {{ att.check_out_time|date:"Y-m-d H:i" }}
+          {% else %}
+            -
+          {% endif %}
+        </td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="6">Heç bir işçi tapılmadı.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<div class="pagination">
+  {% if page_obj.has_previous %}
+    <a href="?range={{ range_type }}&start={{ start_date }}&end={{ end_date }}&page={{ page_obj.previous_page_number }}">⬅ Əvvəlki</a>
+  {% endif %}
+  <span>Səhifə {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+  {% if page_obj.has_next %}
+    <a href="?range={{ range_type }}&start={{ start_date }}&end={{ end_date }}&page={{ page_obj.next_page_number }}">Növbəti ➡</a>
+  {% endif %}
+</div>
+
+<a href="{% url 'dashboard' %}">⬅ Geri Dashboard-a</a>
+
+<script>
+  function toggleCustom(value) {
+    const show = value === 'custom';
+    document.getElementById('startDate').style.display = show ? 'inline-block' : 'none';
+    document.getElementById('endDate').style.display = show ? 'inline-block' : 'none';
+  }
+</script>
+
+</body>
+</html>
+
+
+
+

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+  <meta charset="UTF-8">
+  <title>Bütün İşçilər</title>
+  <style>
+    body { font-family: sans-serif; padding: 2rem; background-color: #f9f9f9; }
+    h1 { color: #2c3e50; }
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    th, td { padding: 10px; border: 1px solid #ccc; text-align: left; }
+    th { background-color: #f0f0f0; }
+    a { text-decoration: none; color: #007bff; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h1>Bütün Aktiv İşçilər</h1>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Ad Soyad</th>
+        <th>Vəzifə</th>
+        <th>Email</th>
+        <th>Telefon</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for worker in workers %}
+        <tr>
+          <td>{{ worker.worker_name }} {{ worker.worker_surname }}</td>
+          <td>{{ worker.position.position_name }}</td>
+          <td>{{ worker.email }}</td>
+          <td>{{ worker.phone }}</td>
+          <td>{% if worker.active %}✅ Aktiv{% else %}❌ Passiv{% endif %}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <p><a href="{% url 'dashboard' %}">⬅ Geri Dashboard-a</a></p>
+</body>
+</html>

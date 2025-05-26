@@ -11,6 +11,9 @@
       padding: 2rem;
       text-align: center;
     }
+    .controls {
+      margin-bottom: 2rem;
+    }
     .card {
       display: inline-block;
       background: #fff;
@@ -18,199 +21,316 @@
       margin: 1rem;
       border-radius: 10px;
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-      width: 200px;
-      cursor: pointer;
-      transition: transform 0.2s;
-    }
-    .card:hover {
-      transform: scale(1.05);
+      width: 300px;
+      vertical-align: top;
     }
     .card h2 {
       font-size: 20px;
       margin-bottom: 10px;
+      cursor: pointer;
     }
     .card p {
       font-size: 24px;
       font-weight: bold;
+      margin: 0;
+    }
+    ul {
+      text-align: left;
+      padding-left: 1.2rem;
+      font-size: 14px;
+      margin-top: 10px;
+      max-height: 200px;
+      overflow-y: auto;
+      display: none;
     }
     canvas {
       margin-top: 3rem;
-      max-width: 700px;
+      max-width: 800px;
     }
-    #detailContainer {
-      margin-top: 2rem;
-      background: #fff;
-      display: inline-block;
-      padding: 1.5rem;
-      border-radius: 10px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      text-align: left;
-      max-width: 700px;
+    input[type="date"] {
+      margin: 0 0.5rem;
     }
-    ul {
-      padding-left: 1.5rem;
-      font-size: 16px;
+    select {
+      margin-left: 1rem;
     }
-  </style>
-  <style>
-    <style>
-  body {
-    font-family: sans-serif;
-    background: #f4f4f4;
-    padding: 2rem;
-    text-align: center;
-  }
-
-  .card {
-    display: inline-block;
-    background: #fff;
-    padding: 1.5rem;
-    margin: 1rem;
-    border-radius: 12px;
-    width: 220px;
-    cursor: pointer;
-    border: 2px solid #e0e0e0;
-    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08);
-    transition: transform 0.2s ease, box-shadow 0.3s ease;
-  }
-
-  .card:hover {
-    transform: scale(1.05);
-    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.15);
-  }
-
-  .card h2 {
-    font-size: 20px;
-    margin-bottom: 10px;
-    color: #444;
-  }
-
-  .card p {
-    font-size: 28px;
-    font-weight: bold;
-    color: #333;
-  }
-</style>
-
   </style>
 </head>
 <body>
-  <h1>HR Dashboard</h1>
 
-  <div class="card" id="presentCard">
-    <h2>Gələnlər</h2><p id="presentCount">0</p>
-  </div>
-  <div class="card" id="absentCard">
-    <h2>Gəlməyənlər</h2><p id="absentCount">0</p>
-  </div>
-  <div class="card" id="excusedCard">
-    <h2>İcazəli</h2><p id="excusedCount">0</p>
-  </div>
-  <div class="card" id="unexcusedCard">
-    <h2>İcazəsiz</h2><p id="unexcusedCount">0</p>
-  </div>
+<h1>HR Dashboard</h1>
 
-  <canvas id="lateChart"></canvas>
+<div class="controls">
+  <label for="range">Tarix Aralığı:</label>
+  <select id="range" onchange="toggleDateInputs()">
+    <option value="day">Son gün</option>
+    <option value="week">1 həftə</option>
+    <option value="month">1 ay</option>
+    <option value="custom">Tarix seç</option>
+  </select>
+  <input type="date" id="startDate" style="display:none;">
+  <input type="date" id="endDate" style="display:none;">
+  <button onclick="loadData()">Tətbiq et</button>
 
-  <div id="detailContainer" style="display: none;"></div>
+  <label for="workerSelect">İşçi seç:</label>
+  <select id="workerSelect" onchange="filterByWorker()">
+    <option value="">Hamısı</option>
+  </select>
 
-  <script>
-    const detailContainer = document.getElementById("detailContainer");
+  <button onclick="exportToCSV()">Tabeli Yüklə (CSV)</button>
+</div>
 
-    function renderList(title, items) {
-      if (items.length === 0) {
-        detailContainer.innerHTML = `<h2>${title}</h2><p>Tapılmadı</p>`;
-      } else {
-        detailContainer.innerHTML = `
-          <h2>${title}</h2>
-          <ul>${items.map(name => `<li>${name}</li>`).join('')}</ul>
-        `;
+<div class="card">
+  <h2 onclick="toggleList('presentList')">Gələnlər</h2><p id="presentCount">0</p>
+  <ul id="presentList"></ul>
+</div>
+
+<div class="card">
+  <h2 onclick="toggleList('absentList')">Gəlməyənlər</h2><p id="absentCount">0</p>
+  <ul id="absentList"></ul>
+</div>
+
+<div class="card">
+  <h2 onclick="toggleList('excusedList')">İcazəli</h2><p id="excusedCount">0</p>
+  <ul id="excusedList"></ul>
+</div>
+
+<div class="card">
+  <h2 onclick="toggleList('unexcusedList')">İcazəsiz</h2><p id="unexcusedCount">0</p>
+  <ul id="unexcusedList"></ul>
+</div>
+
+<canvas id="lateChart"></canvas>
+<canvas id="summaryChart"></canvas>
+
+<script>
+let presentNames = [], absentNames = [], excusedNames = [], unexcusedNames = [];
+
+function toggleList(id) {
+  const el = document.getElementById(id);
+  el.style.display = el.style.display === "none" || el.style.display === "" ? "block" : "none";
+}
+
+function toggleDateInputs() {
+  const range = document.getElementById("range").value;
+  document.getElementById("startDate").style.display = range === "custom" ? "inline-block" : "none";
+  document.getElementById("endDate").style.display = range === "custom" ? "inline-block" : "none";
+}
+
+function getDateRange() {
+  const range = document.getElementById("range").value;
+  const now = new Date();
+  let start, end;
+
+  switch (range) {
+    case "day": start = new Date(now); end = now; break;
+    case "week": start = new Date(now); start.setDate(now.getDate() - 6); end = now; break;
+    case "month": start = new Date(now); start.setDate(now.getDate() - 29); end = now; break;
+    case "custom":
+      start = new Date(document.getElementById("startDate").value);
+      end = new Date(document.getElementById("endDate").value);
+      break;
+  }
+
+  return {
+    start: start.toISOString().split("T")[0],
+    end: end.toISOString().split("T")[0]
+  };
+}
+
+function exportToCSV() {
+  const workerMap = {};
+
+  function addEntry(list, code) {
+    list.forEach(i => {
+      if (!workerMap[i.name]) {
+        workerMap[i.name] = { name: i.name, position: i.position || "-", days: {} };
       }
-      detailContainer.style.display = 'block';
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-      let attendanceData = [];
-      let hrData = [];
-
-      // Fetch data once for reuse
-      Promise.all([
-        fetch('/attendance/hours/').then(res => res.json()),
-        fetch('/hr/reports/').then(res => res.json())
-      ]).then(([attendance, hr]) => {
-        attendanceData = attendance;
-        hrData = hr;
-
-        // Sayları göstər
-        let gelen = 0, gelmeyen = 0;
-        let lateMap = {};
-
-        attendance.forEach(item => {
-          if (item.check_in) gelen++;
-          else gelmeyen++;
-
-          if (item.late_minutes > 0) {
-            const name = item.worker || 'Naməlum';
-            lateMap[name] = (lateMap[name] || 0) + item.late_minutes;
-          }
-        });
-
-        document.getElementById("presentCount").innerText = gelen;
-        document.getElementById("absentCount").innerText = gelmeyen;
-
-        let icazeli = hr.filter(x => x.status === 'icazəli').length;
-        let icazesiz = hr.filter(x => x.status === 'icazəsoz').length;
-
-        document.getElementById("excusedCount").innerText = icazeli;
-        document.getElementById("unexcusedCount").innerText = icazesiz;
-
-        // Gecikmələr chart
-        const labels = Object.keys(lateMap);
-        const values = Object.values(lateMap);
-
-        new Chart(document.getElementById('lateChart').getContext('2d'), {
-          type: 'bar',
-          data: {
-            labels: labels,
-            datasets: [{
-              label: 'Gecikmə dəqiqələri',
-              data: values,
-              backgroundColor: 'rgba(255, 99, 132, 0.5)'
-            }]
-          },
-          options: {
-            responsive: true,
-            plugins: {
-              title: {
-                display: true,
-                text: 'Ən çox gecikən işçilər'
-              }
-            }
-          }
-        });
-      });
-
-      // Click funksiyaları
-      document.getElementById("presentCard").addEventListener("click", () => {
-        const list = attendanceData.filter(d => d.check_in).map(d => d.worker);
-        renderList("Gələn İşçilər", list);
-      });
-
-      document.getElementById("absentCard").addEventListener("click", () => {
-        const list = attendanceData.filter(d => !d.check_in).map(d => d.worker);
-        renderList("Gəlməyən İşçilər", list);
-      });
-
-      document.getElementById("excusedCard").addEventListener("click", () => {
-        const list = hrData.filter(d => d.status === "icazəli").map(d => d.worker);
-        renderList("İcazəli İşçilər", list);
-      });
-
-      document.getElementById("unexcusedCard").addEventListener("click", () => {
-        const list = hrData.filter(d => d.status === "icazəsoz").map(d => d.worker);
-        renderList("İcazəsiz İşçilər", list);
-      });
+      const day = new Date(i.date).getDate();
+      workerMap[i.name].days[day] = code;
     });
-  </script>
+  }
+
+  addEntry(presentNames, "8");
+  addEntry(excusedNames, "i");
+  addEntry(unexcusedNames, "B");
+
+  absentNames.forEach(i => {
+    const day = new Date(i.date).getDate();
+    if (!workerMap[i.name]) {
+      workerMap[i.name] = { name: i.name, position: i.position || "-", days: {} };
+    }
+    if (!workerMap[i.name].days[day]) {
+      workerMap[i.name].days[day] = "B";
+    }
+  });
+
+  let header = ["Ad Soyad", "Vəzifə"];
+  for (let d = 1; d <= 31; d++) header.push(d.toString());
+  header.push("Cəmi");
+  let data = [header];
+
+  Object.values(workerMap).forEach(worker => {
+    let row = [worker.name, worker.position];
+    let total = 0;
+    for (let d = 1; d <= 31; d++) {
+      const mark = worker.days[d] || "";
+      row.push(mark);
+      if (mark === "8") total++;
+    }
+    row.push(total);
+    data.push(row);
+  });
+
+  let csv = data.map(row => row.join(",")).join("\n");
+  let bom = "\uFEFF";
+  let blob = new Blob([bom + csv], { type: 'text/csv;charset=utf-8;' });
+  let url = URL.createObjectURL(blob);
+  let a = document.createElement("a");
+  a.href = url;
+  a.download = "isci_tabeli_gunluk.csv";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+function updateWorkerDropdown() {
+  const allNames = new Set([
+    ...presentNames.map(i => i.name),
+    ...absentNames.map(i => i.name),
+    ...excusedNames.map(i => i.name),
+    ...unexcusedNames.map(i => i.name)
+  ]);
+
+  const select = document.getElementById("workerSelect");
+  select.innerHTML = '<option value="">Hamısı</option>';
+  allNames.forEach(name => {
+    const option = document.createElement("option");
+    option.value = name;
+    option.textContent = name;
+    select.appendChild(option);
+  });
+}
+
+function filterByWorker() {
+  const selected = document.getElementById("workerSelect").value;
+
+  function renderList(id, list) {
+    const ul = document.getElementById(id);
+    ul.innerHTML = list
+      .filter(i => !selected || i.name === selected)
+      .map(i => `<li><strong>${i.name}</strong><br>
+                 Vəzifə: ${i.position || '-'}<br>
+                 Tarix: ${i.date || '-'}<br>
+                 ${i.check_in ? "Giriş: " + i.check_in + "<br>" : ""}
+                 ${i.check_out ? "Çıxış: " + i.check_out + "<br>" : ""}
+                 ${i.late ? "Gecikmə: " + i.late + " dəq<br>" : ""}</li>`)
+      .join('');
+  }
+
+  renderList("presentList", presentNames);
+  renderList("absentList", absentNames);
+  renderList("excusedList", excusedNames);
+  renderList("unexcusedList", unexcusedNames);
+}
+
+function loadData() {
+  const { start, end } = getDateRange();
+
+  Promise.all([
+    fetch(`/attendance/hours/?start=${start}&end=${end}`).then(res => res.json()),
+    fetch(`/hr/reports/?start=${start}&end=${end}`).then(res => res.json())
+  ]).then(([attendance, hr]) => {
+    presentNames = []; absentNames = []; excusedNames = []; unexcusedNames = []; 
+    let lateMap = {}, summaryMap = {};
+
+    attendance.forEach(item => {
+      const info = {
+        name: item.worker,
+        check_in: item.check_in_time,
+        check_out: item.check_out_time,
+        date: item.date,
+        position: item.position || "-",
+        late: item.late_minutes || 0
+      };
+
+      if (!summaryMap[item.date]) summaryMap[item.date] = { present: 0, absent: 0 };
+
+      if (item.check_in) {
+        presentNames.push(info);
+        summaryMap[item.date].present++;
+        if (info.late > 0) {
+          lateMap[info.name] = (lateMap[info.name] || 0) + info.late;
+        }
+      } else {
+        absentNames.push(info);
+        summaryMap[item.date].absent++;
+      }
+    });
+
+    hr.forEach(item => {
+      const info = {
+        name: item.worker,
+        date: item.date,
+        position: item.position || "-",
+        check_in: "-",
+        check_out: "-",
+        late: 0
+      };
+      if (item.status === 'icazəli') excusedNames.push(info);
+      if (item.status === 'icazəsiz') unexcusedNames.push(info);
+    });
+
+    document.getElementById("presentCount").innerText = presentNames.length;
+    document.getElementById("absentCount").innerText = absentNames.length;
+    document.getElementById("excusedCount").innerText = excusedNames.length;
+    document.getElementById("unexcusedCount").innerText = unexcusedNames.length;
+
+    updateWorkerDropdown();
+    filterByWorker();
+
+    new Chart(document.getElementById('lateChart').getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: Object.keys(lateMap),
+        datasets: [{
+          label: 'Gecikmə dəqiqələri',
+          data: Object.values(lateMap),
+          backgroundColor: 'rgba(255, 99, 132, 0.5)'
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          title: { display: true, text: 'Ən çox gecikən işçilər' }
+        }
+      }
+    });
+
+    const dates = Object.keys(summaryMap).sort();
+    const presentData = dates.map(d => summaryMap[d].present);
+    const absentData = dates.map(d => summaryMap[d].absent);
+
+    new Chart(document.getElementById('summaryChart').getContext('2d'), {
+      type: 'line',
+      data: {
+        labels: dates,
+        datasets: [
+          { label: 'Gələnlər', data: presentData, borderColor: 'green', fill: false },
+          { label: 'Gəlməyənlər', data: absentData, borderColor: 'red', fill: false }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          title: { display: true, text: 'Tarix üzrə Gələn/Gəlməyən Qrafiki' }
+        }
+      }
+    });
+  });
+}
+
+document.addEventListener('DOMContentLoaded', loadData);
+</script>
+
 </body>
 </html>
